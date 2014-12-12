@@ -20,7 +20,7 @@ require_once(dirname(__FILE__) . '/ApiKeyAuthentication.php');
 class OklinkBase
 {
     const API_BASE = '/api/v1/';
-    const WEB_BASE = 'https://www.oklink.com/';
+    const WEB_BASE = 'http://localtest.oklink.com/';
     private $_rpc;
     private $_authentication;
 
@@ -80,6 +80,13 @@ class OklinkBase
     public function put($path, $params=array())
     {
         return $this->_rpc->request("PUT", $path, $params);
+    }
+
+    public function checkCallback(){
+        $signature  = $_SERVER["HTTP_SIGNATURE"];
+        $post       = file_get_contents('php://input');
+        // return true;
+        return $signature == hash_hmac("sha256", $post, $this->_authentication->getData()->apiKeySecret);  
     }
 
  }

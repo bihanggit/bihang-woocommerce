@@ -135,8 +135,8 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 					update_option("oklink_callback_secret", $callback_secret);
 				}
 				$notify_url = WC()->api_request_url('WC_Gateway_Oklink');
-				$notify_url = add_query_arg('callback_secret', $callback_secret, $notify_url);
-				return $notify_url;
+				// $notify_url = add_query_arg('callback_secret', $callback_secret, $notify_url);
+				return str_replace('localhost','192.168.0.125',$notify_url);
 			}
 
 			function init_form_fields() {
@@ -182,52 +182,64 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 
 				$order = new WC_Order($order_id);
 
-				$success_url = add_query_arg('return_from_coinbase', true, $this->get_return_url($order));
+				$success_url = add_query_arg('return_from_oklink', true, $this->get_return_url($order));
 
-				$params = array(
-					'name'               => 'Order #' . $order_id,
-					'price'              => $order->get_total(),
-					'price_currency'     => get_woocommerce_currency(),
-					'callback_url'       => $this->notify_url,
-					'custom'             => $order_id,
-					'success_url'        => $success_url,
-				);
+				// $cancel_url = add_query_arg('return_from_coinbase', true, $order->get_cancel_order_url());
+				// $cancel_url = add_query_arg('cancelled', true, $cancel_url);
+				// $cancel_url = add_query_arg('order_key', $order->order_key, $cancel_url);
 
-				$api_key    = $this->get_option('apiKey');
-				$api_secret = $this->get_option('apiSecret');
+				if( get_woocommerce_currency()=='USD' || get_woocommerce_currency()=='CNY'  ){
+					$params = array(
+						'name'               => 'Order #' . $order_id,
+						'price'              => $order->get_total(),
+						'price_currency'     => get_woocommerce_currency(),
+						'callback_url'       => $this->notify_url,
+						'custom'             => $order_id,
+						'success_url'        => $success_url,
+					);
 
-				if ($api_key == '' || $api_secret == '') {
-					$woocommerce->add_error(__('Sorry, but there was an error processing your order. Please try again or try a different payment method. (plugin not configured)', 'coinbase-woocommerce'));
+					$api_key    = $this->get_option('apiKey');
+					$api_secret = $this->get_option('apiSecret');
+
+					if ($api_key == '' || $api_secret == '') {
+						$woocommerce->add_error(__('Sorry, but there was an error processing your order. Please try again or try a different payment method. (plugin not configured)', 'coinbase-woocommerce'));
+						return;
+					}
+
+					try {
+						$client   = Oklink::withApiKey($api_key, $api_secret);
+						$result   = $client->buttonsButton($params);
+					}
+					catch (Exception $e) {
+						$order->add_order_note(__('Error while processing oklink payment:', 'oklink-woocommerce') . ' ' . var_export($e, TRUE));
+						$woocommerce->add_error(__($e->getMessage(), 'oklink-woocommerce'));				
+						// $woocommerce->add_error(__('Sorry, but there was an error processing your order. Please try again or try a different payment method.', 'coinbase-woocommerce'));
+						return;
+					}
+
+					return array(
+						'result'   => 'success',
+						'redirect' =>  OklinkBase::WEB_BASE."merchant/mPayOrderStemp1.do?buttonid=".$result->button->id,
+					);			
+				}else{
+					$woocommerce->add_error(__('only support USD and CNY', 'oklink-woocommerce'));
 					return;
 				}
 
-				try {
-					$client   = Oklink::withApiKey($api_key, $api_secret);
-					$result   = $client->buttonsButton($params);
-				}
-				catch (Exception $e) {
-					$order->add_order_note(__('Error while processing oklink payment:', 'oklink-woocommerce') . ' ' . var_export($e, TRUE));
-					$woocommerce->add_error(__($e->getMessage(), 'oklink-woocommerce'));					
-					return;
-				}
 
-				return array(
-					'result'   => 'success',
-					'redirect' => OklinkBase::WEB_BASE."merchant/mPayOrderStemp1.do?buttonid=".$result->button->id,
-				);
 			}
 
 			function check_oklink_callback() {
-				$callback_secret = get_option("oklink_callback_secret");
-				if ($callback_secret != false && $callback_secret == $_REQUEST['callback_secret']) {
+				require_once(plugin_dir_path(__FILE__) . 'lib' . DIRECTORY_SEPARATOR . 'Oklink.php');
+				$api_key    = $this->get_option('apiKey');
+				$api_secret = $this->get_option('apiSecret');
+				$client   = Oklink::withApiKey($api_key, $api_secret);
+				if ($client->checkCallback()) {
 					$post_body = json_decode(file_get_contents("php://input"));
-					if (isset($post_body->order)) {
-						$oklink_order = $post_body->order;
-						$order_id       = $oklink_order->custom;
-						$order          = new WC_Order($order_id);
-					} else if (isset($post_body->payout)) {
-						header('HTTP/1.1 200 OK');
-						exit("Oklink Payout Callback Ignored");
+					if (isset($post_body)) {
+						$oklink_order = $post_body;
+						$order_id     = $oklink_order->custom;
+						$order        = new WC_Order($order_id);
 					} else {
 						header("HTTP/1.1 400 Bad Request");
 						exit("Unrecognized Oklink Callback");
@@ -242,9 +254,9 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 
 				// Add Oklink metadata to the order
 				update_post_meta($order->id, __('Oklink Order ID', 'oklink-woocommerce'), wc_clean($oklink_order->id));
-				if (isset($oklink_order->customer) && isset($oklink_order->customer->email)) {
-					update_post_meta($order->id, __('Oklink Account of Payer', 'oklink-woocommerce'), wc_clean($oklink_order->customer->email));
-				}
+				// if (isset($oklink_order->customer) && isset($oklink_order->customer->email)) {
+				// 	update_post_meta($order->id, __('Oklink Account of Payer', 'oklink-woocommerce'), wc_clean($oklink_order->customer->email));
+				// }
 
 				switch (strtolower($oklink_order->status)) {
 
