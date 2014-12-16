@@ -134,9 +134,9 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 					$callback_secret = sha1(openssl_random_pseudo_bytes(20));
 					update_option("oklink_callback_secret", $callback_secret);
 				}
-				$notify_url = WC()->api_request_url('WC_Gateway_Oklink');
-				// $notify_url = add_query_arg('callback_secret', $callback_secret, $notify_url);
-				return str_replace('localhost','192.168.0.125',$notify_url);
+				$notify_url = WC()->api_request_url('WC_Gateway_oklink');
+				$notify_url = add_query_arg('callback_secret', $callback_secret, $notify_url);
+				return $notify_url;
 			}
 
 			function init_form_fields() {
@@ -184,17 +184,13 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 
 				$success_url = add_query_arg('return_from_oklink', true, $this->get_return_url($order));
 
-				// $cancel_url = add_query_arg('return_from_coinbase', true, $order->get_cancel_order_url());
-				// $cancel_url = add_query_arg('cancelled', true, $cancel_url);
-				// $cancel_url = add_query_arg('order_key', $order->order_key, $cancel_url);
-
 				if( get_woocommerce_currency()=='USD' || get_woocommerce_currency()=='CNY'  ){
 					$params = array(
 						'name'               => 'Order #' . $order_id,
 						'price'              => $order->get_total(),
 						'price_currency'     => get_woocommerce_currency(),
-						'callback_url'       => $this->notify_url,
 						'custom'             => $order_id,
+						'callback_url'       => $this->notify_url,
 						'success_url'        => $success_url,
 					);
 
@@ -234,6 +230,7 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 				$api_key    = $this->get_option('apiKey');
 				$api_secret = $this->get_option('apiSecret');
 				$client   = Oklink::withApiKey($api_key, $api_secret);
+
 				if ($client->checkCallback()) {
 					$post_body = json_decode(file_get_contents("php://input"));
 					if (isset($post_body)) {
@@ -249,10 +246,7 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 					exit("Spoofed callback");
 				}
 
-				// Legitimate order callback from Oklink
 				header('HTTP/1.1 200 OK');
-
-				// Add Oklink metadata to the order
 				update_post_meta($order->id, __('Oklink Order ID', 'oklink-woocommerce'), wc_clean($oklink_order->id));
 				// if (isset($oklink_order->customer) && isset($oklink_order->customer->email)) {
 				// 	update_post_meta($order->id, __('Oklink Account of Payer', 'oklink-woocommerce'), wc_clean($oklink_order->customer->email));
@@ -261,7 +255,6 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 				switch (strtolower($oklink_order->status)) {
 
 					case 'completed':
-
 						// Check order not already completed
 						if ($order->status == 'completed') {
 							exit;
@@ -286,7 +279,7 @@ if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_
 		 * Add this Gateway to WooCommerce
 		 **/
 		function woocommerce_add_oklink_gateway($methods) {
-			$methods[] = 'WC_Gateway_Oklink';
+			$methods[] = 'WC_Gateway_oklink';
 			return $methods;
 		}
 
