@@ -6,7 +6,6 @@ class Oklink_Requestor
     public function doCurlRequest($curl)
     {
         $response = curl_exec($curl);
-        var_dump($response);
         // Check for errors
         if($response === false) {
             $error = curl_errno($curl);

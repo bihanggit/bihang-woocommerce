@@ -77,7 +77,7 @@ class Oklink_Rpc
         $curlOpts[CURLOPT_HTTPHEADER] = $headers;
 
         // $curlOpts[CURLOPT_CAINFO] = dirname(__FILE__) . '/ca-oklink.crt';
-        // $curlOpts[CURLOPT_RETURNTRANSFER] = true;
+        $curlOpts[CURLOPT_RETURNTRANSFER] = true;
         $curlOpts[CURLOPT_SSL_VERIFYPEER] = FALSE;
         $curlOpts[CURLOPT_SSL_VERIFYHOST]=  FALSE;
         // Do request
