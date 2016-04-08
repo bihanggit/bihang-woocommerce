@@ -1,5 +1,4 @@
 <?php
 
-class Oklink_TokensExpiredException extends Oklink_Exception
-{
+class Bihang_TokensExpiredException extends Bihang_Exception{
 }

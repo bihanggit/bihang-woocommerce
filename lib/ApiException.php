@@ -1,5 +1,4 @@
 <?php
 
-class Oklink_ApiException extends Oklink_Exception
-{
+class Bihang_ApiException extends Bihang_Exception{
 }

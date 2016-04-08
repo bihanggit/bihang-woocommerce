@@ -1,6 +1,6 @@
 <?php
 
-class Oklink_OAuthAuthentication extends Oklink_Authentication
+class Bihang_OAuthAuthentication extends Bihang_Authentication
 {
     private $_oauth;
     private $_tokens;

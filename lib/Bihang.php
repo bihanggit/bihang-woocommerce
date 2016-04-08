@@ -1,20 +1,20 @@
 <?php
 require_once(dirname(__FILE__) .'/Base.php');
-class Oklink extends OklinkBase{
+class Bihang extends BihangBase{
 
     public static function withApiKey($key, $secret)
     {
-        return new Oklink(new Oklink_ApiKeyAuthentication($key, $secret));
+        return new Bihang(new Bihang_ApiKeyAuthentication($key, $secret));
     }
 
     public static function withSimpleApiKey($key)
     {
-        return new Oklink(new Oklink_SimpleApiKeyAuthentication($key));
+        return new Bihang(new Bihang_SimpleApiKeyAuthentication($key));
     }
 
     public static function withOAuth($oauth, $tokens)
     {
-        return new Oklink(new Oklink_OAuthAuthentication($oauth, $tokens));
+        return new Bihang(new Bihang_OAuthAuthentication($oauth, $tokens));
     }
 
     function __construct($authentication, $tokens=null, $apiKeySecret=null) {

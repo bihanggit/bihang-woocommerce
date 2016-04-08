@@ -1,7 +1,7 @@
 <?php
 
 if(!function_exists('curl_init')) {
-    throw new Exception('The OKlink client library requires the CURL PHP extension.');
+    throw new Exception('The Bihang client library requires the CURL PHP extension.');
 }
 
 require_once(dirname(__FILE__) . '/Exception.php');
@@ -17,10 +17,10 @@ require_once(dirname(__FILE__) . '/OAuthAuthentication.php');
 require_once(dirname(__FILE__) . '/ApiKeyAuthentication.php');
 
 
-class OklinkBase
+class BihangBase
 {
     const API_BASE = '/api/v1/';
-    const WEB_BASE = 'https://www.oklink.com/';
+    const WEB_BASE = 'https://www.bihang.com/';
     private $_rpc;
     private $_authentication;
 
@@ -29,7 +29,7 @@ class OklinkBase
     public function __construct($authentication, $tokens=null, $apiKeySecret=null)
     {
         // First off, check for a legit authentication class type
-        if (is_a($authentication, 'Oklink_Authentication')) {
+        if (is_a($authentication, 'Bihang_Authentication')) {
             $this->_authentication = $authentication;
         } else {
             // Here, $authentication was not a valid authentication object, so
@@ -38,27 +38,27 @@ class OklinkBase
             // In older versions of this library, the first parameter of this constructor
             // can be either an API key string or an OAuth object.
             if ($tokens !== null) {
-                $this->_authentication = new Oklink_OAuthAuthentication($authentication, $tokens);
+                $this->_authentication = new Bihang_OAuthAuthentication($authentication, $tokens);
             } else if ($authentication !== null && is_string($authentication)) {
                 $apiKey = $authentication;
                 if ($apiKeySecret === null) {
                     // Simple API key
-                    $this->_authentication = new Oklink_SimpleApiKeyAuthentication($apiKey);
+                    $this->_authentication = new Bihang_SimpleApiKeyAuthentication($apiKey);
                 } else {
-                    $this->_authentication = new Oklink_ApiKeyAuthentication($apiKey, $apiKeySecret);
+                    $this->_authentication = new Bihang_ApiKeyAuthentication($apiKey, $apiKeySecret);
                 }
             } else {
-                throw new OkLink_ApiException('Could not determine API authentication scheme');
+                throw new Bihang_ApiException('Could not determine API authentication scheme');
             }
         }
 
-        $this->_rpc = new Oklink_Rpc(new Oklink_Requestor(), $this->_authentication);
+        $this->_rpc = new Bihang_Rpc(new Bihang_Requestor(), $this->_authentication);
     }
 
     // Used for unit testing only
     public function setRequestor($requestor)
     {
-        $this->_rpc = new Oklink_Rpc($requestor, $this->_authentication);
+        $this->_rpc = new Bihang_Rpc($requestor, $this->_authentication);
         return $this;
     }
 

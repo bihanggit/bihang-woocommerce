@@ -1,6 +1,6 @@
 <?php
 
-class Oklink_ApiKeyAuthentication extends Oklink_Authentication
+class Bihang_ApiKeyAuthentication extends Bihang_Authentication
 {
     private $_apiKey;
     private $_apiKeySecret;

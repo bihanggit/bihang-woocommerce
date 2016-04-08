@@ -1,6 +1,6 @@
 <?php
 
-class Oklink_Exception extends Exception
+class Bihang_Exception extends Exception
 {
     public function __construct($message, $http_code=null, $response=null)
     {

@@ -1,6 +1,6 @@
 <?php
 
-abstract class OKlink_Authentication
+abstract class Bihang_Authentication
 {
     abstract public function getData();
 }

@@ -1,6 +1,6 @@
 <?php
 
-class Oklink_Rpc
+class Bihang_Rpc
 {
     private $_requestor;
     private $authentication;
@@ -13,7 +13,7 @@ class Oklink_Rpc
 
     public function request($method, $url, $params)
     {
-        $url = OklinkBase::API_BASE . $url;
+        $url = BihangBase::API_BASE . $url;
         // Initialize CURL
         $curl = curl_init();
         $curlOpts = array();
@@ -32,23 +32,23 @@ class Oklink_Rpc
         }
 
         // Headers
-        $headers = array('User-Agent: OklinkPHP/v1');
+        $headers = array('User-Agent: BihangPHP/v1');
 
         $auth = $this->_authentication->getData();
 
         // Get the authentication class and parse its payload into the HTTP header.
         $authenticationClass = get_class($this->_authentication);
         switch ($authenticationClass) {
-            case 'Oklink_OAuthAuthentication':
+            case 'Bihang_OAuthAuthentication':
                 // Use OAuth
                 if(time() > $auth->tokens["expire_time"]) {
-                    throw new Oklink_TokensExpiredException("The OAuth tokens are expired. Use refreshTokens to refresh them");
+                    throw new Bihang_TokensExpiredException("The OAuth tokens are expired. Use refreshTokens to refresh them");
                 }
 
                 $headers[] = 'Authorization: Bearer ' . $auth->tokens["access_token"];
                 break;
 
-            case 'Oklink_ApiKeyAuthentication':
+            case 'Bihang_ApiKeyAuthentication':
                 // Use HMAC API key
                 $microseconds = sprintf('%0.0f',round(microtime(true) * 1000000));
 
@@ -64,7 +64,7 @@ class Oklink_Rpc
                 break;
 
             default:
-                throw new Oklink_ApiException("Invalid authentication mechanism");
+                throw new Bihang_ApiException("Invalid authentication mechanism");
                 break;
         }
         // Create query string
@@ -73,10 +73,8 @@ class Oklink_Rpc
             $url .= "?" . $queryString;
         }
         // CURL options
-        $curlOpts[CURLOPT_URL] = substr(OklinkBase::WEB_BASE,0,-1).$url;
+        $curlOpts[CURLOPT_URL] = substr(BihangBase::WEB_BASE,0,-1).$url;
         $curlOpts[CURLOPT_HTTPHEADER] = $headers;
-
-        // $curlOpts[CURLOPT_CAINFO] = dirname(__FILE__) . '/ca-oklink.crt';
         $curlOpts[CURLOPT_RETURNTRANSFER] = true;
         $curlOpts[CURLOPT_SSL_VERIFYPEER] = FALSE;
         $curlOpts[CURLOPT_SSL_VERIFYHOST]=  FALSE;
@@ -95,9 +93,9 @@ class Oklink_Rpc
            echo "Invalid response body".$response['statusCode'].$response['body'];
         }
         if(isset($json->error)) {
-            throw new Oklink_ApiException($json->error, $response['statusCode'], $response['body']);
+            throw new Bihang_ApiException($json->error, $response['statusCode'], $response['body']);
         } else if(isset($json->errors)) {
-            throw new Oklink_ApiException(implode($json->errors, ', '), $response['statusCode'], $response['body']);
+            throw new Bihang_ApiException(implode($json->errors, ', '), $response['statusCode'], $response['body']);
         }
 
         return $json;
